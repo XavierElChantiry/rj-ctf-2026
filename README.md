@@ -71,9 +71,12 @@ Full usage examples and setup: [`ctf_toolkit/README.md`](ctf_toolkit/README.md).
 
 Run in this order the moment the box is handed over:
 
+0. **`00_doctor.sh`** — capability report: what's actually installed on
+   this specific box (iptables, tcpdump, lynis, scapy, ...) vs. what's
+   missing, so the team knows in five seconds what it's working with. Run
+   before `01_baseline.sh`.
 1. **`01_baseline.sh`** — listening ports → PID → exe path, logged-in
-   users, cron/systemd-timer persistence check. Run first on any box,
-   before anything else.
+   users, cron/systemd-timer persistence check.
 2. **`02_backup_git.sh`** — tar.gz + git-snapshot of configured dirs
    (default `/etc /var/www /var/named`), generates a `rollback.sh` helper
    for instant revert.
@@ -94,6 +97,11 @@ Run in this order the moment the box is handed over:
    `ldd`-resolved libs, deliberately excludes any shell so exploited
    shellcode can't pivot. Only needed if a legacy/vulnerable daemon is
    mandated by the challenge.
+8. **`08_decoy.sh`** (+ `decoy_listener.py`) — optional honeypot/decoy
+   listener (fake HTTP login lure, or a fake service banner) on a port
+   nothing else is using. Pure observation — logs who probed it and what
+   they sent, never blocks anything. Refuses to bind a port that's already
+   in real use.
 
 `config.sh` centralizes all the "fill in on the day" values (backup dirs,
 allow-listed ports, scoring subnet, capture ports/dir, jail root) — every
@@ -124,6 +132,36 @@ concrete points back to it.
   scapy + root/Npcap.
 
 Setup and full workflow: [`ctf_ad/README.md`](ctf_ad/README.md).
+
+## Borrowed ideas
+
+After reviewing [ashwnn/ctf-buddy](https://github.com/ashwnn/ctf-buddy) (a
+much larger Python framework built for a similar remote-vuln-box workflow),
+two of its patterns were worth adapting into this simpler toolkit — kept as
+plain bash/stdlib-Python scripts rather than pulling in its full
+plan/apply/rollback framework, which is built for an operator managing a
+fleet of profiles remotely over SSH and is more machinery than a
+single-box, single-day event needs:
+
+- **`ctf_defense/00_doctor.sh`** — a capability report before touching
+  anything, mirroring their `ctfctl doctor`.
+- **`ctf_defense/08_decoy.sh` / `decoy_listener.py`** — an honeypot/decoy
+  listener, mirroring their `ctfctl decoy`/`honeypot` (HTTP lure + banner
+  modes, refuses to bind a port already in real use, bounded/capped
+  logging so a scan can't fill the disk or forge log lines).
+- **`ctf_ad`'s `acknowledged_rules` gate** — their target-declaration +
+  policy-acknowledgment requirement before any remote mutation was worth
+  a lighter version here: the attack runner now refuses to start unless
+  `acknowledged_rules: true` is set and `teams` no longer matches the
+  template's placeholder IPs, so a copy-pasted config can't accidentally
+  fire exploits at nobody-confirmed-in-scope addresses.
+
+Not adopted: their full remote SSH-administration model (`remote
+probe/plan/apply/verify/rollback` against a declared host from an
+operator's laptop), the curated knowledge-base corpus (real content to
+research and write ourselves, not something to copy), Docker-based
+practice fixtures, and release packaging — all built for a heavier,
+longer-running operation than one hand-off box for one day.
 
 ## Open unknowns
 

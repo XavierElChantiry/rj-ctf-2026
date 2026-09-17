@@ -14,7 +14,8 @@ moment you get access — don't try to type these out live.
 
 ```bash
 cd ctf_defense
-./01_baseline.sh          # FIRST — see what's normal before you change anything
+./00_doctor.sh            # FIRST — what's actually on this box vs. what's missing
+./01_baseline.sh          # what's normal before you change anything
 ./02_backup_git.sh        # snapshot configs/webroot so you can instantly revert tampering
 ./04_host_audit.sh        # SUID baseline + quick lynis pass + UID-0 check
 ./06_capture_ring.sh &    # start rolling packet capture in the background
@@ -41,6 +42,29 @@ just replace it:
 ./07_chroot_jail.sh /usr/sbin/vsftpd
 chroot /jail /usr/sbin/vsftpd    # start it yourself — flags/config vary too much to script
 ```
+
+Optional, once the box is locked down and just needs monitoring — a decoy
+listener on a port nothing else is using, to see who's scanning and what
+they try:
+
+```bash
+# add the port to INBOUND_ALLOW_PORTS in config.sh BEFORE locking down, or
+# 03_firewall_lockdown.sh's default-drop will silently kill it too
+./08_decoy.sh start --port 8080 --mode http                     # fake login page lure
+./08_decoy.sh start --port 2222 --mode banner --banner ssh      # fake ssh greeting
+./08_decoy.sh status
+./08_decoy.sh logs --port 8080
+./08_decoy.sh stop --all
+```
+
+It's pure observation, never a defense — it doesn't block anything, and a
+hit is a source address, not proof of identity. Never point it at a port a
+real/scored service needs; `00_doctor.sh`/`01_baseline.sh`'s listening-socket
+dump tells you what's actually free. Refuses to start (non-zero exit) if
+the port is already bound to something real — verified against a real
+double-bind on Linux; a Windows dev box won't reproduce that refusal since
+Windows' `SO_REUSEADDR` is more permissive than POSIX, so don't trust that
+specific check outside the actual (Linux) competition box.
 
 ## config.sh
 

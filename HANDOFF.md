@@ -88,9 +88,16 @@ build more tooling assuming that unless something concrete says otherwise.
   history for exact test transcripts if you need to re-verify.
 
 ### `ctf_defense/` — live host-defense scripts (for the confirmed defense round)
-Built directly from a teammate's prep-video summary (7 named scripts).
-Bash, no package-repo dependency at runtime.
+Built directly from a teammate's prep-video summary (7 named scripts), plus
+2 more (`00_doctor.sh`, `08_decoy.sh`) adapted from reviewing
+[ashwnn/ctf-buddy](https://github.com/ashwnn/ctf-buddy) — see "Borrowed
+ideas" in the root [README.md](README.md#borrowed-ideas) for what was and
+wasn't adopted from it. Bash (+ one stdlib-only Python helper for the
+decoy listener), no package-repo dependency at runtime.
 
+0. `00_doctor.sh` — capability report (what's actually installed on this
+   box vs. missing) for every tool the other scripts use. **Run this
+   first**, before `01_baseline.sh`.
 1. `01_baseline.sh` — listening ports → PID → exe path, logged-in users,
    cron/systemd-timer persistence check. **Run this first on any box,
    before anything else.**
@@ -113,6 +120,14 @@ Bash, no package-repo dependency at runtime.
    ports; feed rotated pcaps into `ctf_toolkit/blue/pcap_triage.py`.
 7. `07_chroot_jail.sh` — jails a legacy daemon binary + its `ldd`-resolved
    libs, deliberately excludes any shell so exploited shellcode can't pivot.
+8. `08_decoy.sh` (+ `decoy_listener.py`) — optional honeypot/decoy on a
+   port nothing else is using (fake HTTP login lure or fake service
+   banner). Pure observation, never blocks anything; refuses to bind a
+   port already in real use. **Tested end-to-end** (HTTP lure + banner
+   modes, JSON-line logging all verified with curl/manual TCP) — the one
+   caveat is the bind-refusal test doesn't reproduce on this Windows dev
+   box (`SO_REUSEADDR` is more permissive than POSIX there); it's expected
+   to hold correctly on the real Linux competition box.
 
 `ctf_defense/config.sh` centralizes all the "fill in on the day" values
 (backup dirs, allow-listed ports, scoring subnet, capture ports/dir, jail
@@ -127,7 +142,13 @@ concrete points back to it. Has: pluggable exploit-module runner
 (`attack/runner.py`, drop modules in `attack/exploits/`), pluggable flag
 submitters (`attack/submitters.py`: file/http/null), and defense-side
 traffic sniffing / healthchecks / log watching mirroring `ctf_defense/`'s
-concerns but Python-based and round-oriented rather than one-shot.
+concerns but Python-based and round-oriented rather than one-shot. The
+runner now also refuses to start unless `config.yaml` has
+`attack.acknowledged_rules: true` *and* `teams` no longer matches the
+template's placeholder IPs — a safety gate adapted from ctf-buddy's
+target-declaration pattern, tested end-to-end (all three states: refused
+unacknowledged, refused on placeholder teams, ran normally once both are
+real).
 
 ## Recommended external tools (from the teammate's prep video)
 

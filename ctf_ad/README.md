@@ -17,6 +17,12 @@ Edit `config.yaml`: flag regex (from the rules PDF/scoreboard), your own IP,
 enemy team IPs once published, and the flag-submission backend. `config.yaml`
 is gitignored — it will hold real team IPs and possibly an API token.
 
+Set `attack.acknowledged_rules: true` only after you've actually read the
+event's rules on allowed targets/scope. The runner refuses to start
+otherwise, and also refuses if `teams` still matches this file's placeholder
+IPs — both are there so a copy-pasted template can't accidentally start
+firing exploits at addresses nobody confirmed are in-scope.
+
 ## Attack side
 
 1. As you find a vulnerable service, copy `attack/exploits/_template.py` to

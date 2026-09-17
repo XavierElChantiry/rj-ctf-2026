@@ -31,6 +31,11 @@ from ctf_ad.common.flags import FlagStore, compile_flag_regex, extract_flags
 
 log = logging.getLogger("ctf_ad.attack")
 
+# The exact placeholder IPs shipped in config.example.yaml — if `teams` still
+# matches this, the operator copied the template without filling in real
+# enemy hosts, so refuse to fire exploits at it.
+EXAMPLE_TEAMS = {"10.60.1.2", "10.60.2.2", "10.60.3.2"}
+
 
 def load_exploits() -> list[ModuleType]:
     mods = []
@@ -111,10 +116,23 @@ def main() -> None:
         ],
     )
 
+    if not acfg.get("acknowledged_rules"):
+        log.error(
+            "attack.acknowledged_rules is false in config.yaml — read the "
+            "event's rules on allowed targets, then set it true. Refusing to start."
+        )
+        return
+
     own_ips = set(cfg.get("own_ips", []))
     targets = [t for t in cfg["teams"] if t not in own_ips]
     if not targets:
         log.error("no targets configured (check config.yaml `teams`)")
+        return
+    if set(cfg["teams"]) == EXAMPLE_TEAMS:
+        log.error(
+            "`teams` in config.yaml still matches the placeholder example IPs "
+            "— fill in real enemy hosts before running. Refusing to start."
+        )
         return
 
     exploit_mods = load_exploits()

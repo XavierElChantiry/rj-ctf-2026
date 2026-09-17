@@ -15,6 +15,12 @@ teams:
   - 10.60.3.2
 
 attack:
+  # Set true only after reading the event's actual rules on scope/allowed
+  # targets and confirming `teams` below is real, not this template's
+  # placeholder IPs. The runner refuses to start otherwise — an exploit
+  # loop firing at addresses nobody confirmed is in-scope is not a mistake
+  # you want to make mid-event.
+  acknowledged_rules: false
   timeout_seconds: 5
   concurrency: 20
   round_interval_seconds: 90   # match the game's flag-rotation tick once announced
