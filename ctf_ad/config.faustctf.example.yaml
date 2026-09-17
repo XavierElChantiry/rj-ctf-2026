@@ -1,0 +1,60 @@
+# FAUST CTF 2026 — Saturday 2026-09-26, 12:00-21:00 UTC (service decryption
+# password releases at 12:00, competition runs 13:00-21:00).
+# https://2026.faustctf.net/ | protocol docs: https://ctf-gameserver.org/
+#
+# Copy to config.yaml (`cp ctf_ad/config.faustctf.example.yaml ctf_ad/config.yaml`)
+# and fill in the CHANGEME values once your team is registered and assigned
+# a number. config.yaml is gitignored — never commit real team numbers/IPs.
+
+flag_regex: 'FAUST_[A-Za-z0-9/+]{32}'   # CHANGEME — confirm the real pattern from event docs/first captured flag
+
+own_ips: []   # unused in team_numbers mode; own_team_number below does the exclusion
+
+own_team_number: CHANGEME   # your assigned FAUST team number
+
+# FAUST assigns every team a fixed IPv6 vulnbox address derived from its team
+# number (see https://2026.faustctf.net/information/setup/). Fill in real
+# team numbers once the scoreboard/teams.json publishes them — CHANGEME is a
+# placeholder, not a working target.
+team_numbers:
+  - CHANGEME
+target_template: "fd66:666:{team}::2"
+
+attack:
+  # Read FAUST's rules (https://2026.faustctf.net/information/rules/) and the
+  # LLM policy before flipping this — the runner refuses to start otherwise.
+  acknowledged_rules: false
+  timeout_seconds: 5
+  concurrency: 20
+  round_interval_seconds: 60   # confirm the real tick length from event docs; 60s is a placeholder
+  submission:
+    backend: tcp
+    tcp:
+      host: submission.faustctf.net
+      port: 666
+      timeout_seconds: 10
+  flag_ids:
+    url: "https://2026.faustctf.net/competition/teams.json"
+    refresh_seconds: 30
+  state:
+    seen_flags_path: ctf_ad/seen_flags.json
+  logging:
+    path: ctf_ad/attack.log
+    level: INFO
+
+defense:
+  sniff:
+    interface: null
+    ports: []   # CHANGEME once services/ports are known from the released vulnbox
+  healthcheck:
+    interval_seconds: 30
+    checks: []  # CHANGEME — one entry per service in the vulnbox, so a patch that breaks the checker is caught before it costs SLA points
+  log_watch:
+    paths: []   # CHANGEME — service log paths inside the vulnbox
+    extra_patterns:
+      - '\.\./\.\./'
+      - 'UNION\s+SELECT'
+      - '<script'
+  logging:
+    path: ctf_ad/defense.log
+    level: INFO

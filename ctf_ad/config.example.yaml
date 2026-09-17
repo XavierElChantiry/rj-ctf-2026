@@ -8,7 +8,12 @@ own_ips:
   - 10.60.0.2
 
 # Enemy team hosts to attack. Fill in as soon as the scoreboard publishes them.
-# Either explicit IPs, or a Python range expression evaluated by expand_targets().
+# This is the flat-IP mode (see ctf_ad/common/targets.py) for a generic A/D
+# format with plain reachable IPs and no per-team flag-ID lookups. If the
+# event instead assigns each team a fixed, team-number-derived address (e.g.
+# FAUST CTF's IPv6 `fd66:666:<team>::2` scheme) and publishes per-round flag
+# IDs, use `team_numbers` + `target_template` instead — see
+# config.faustctf.example.yaml for a filled-in example of that mode.
 teams:
   - 10.60.1.2
   - 10.60.2.2
@@ -25,7 +30,7 @@ attack:
   concurrency: 20
   round_interval_seconds: 90   # match the game's flag-rotation tick once announced
   submission:
-    backend: file             # file | http | null (null = print only, no submit)
+    backend: file             # file | http | tcp | null (null = print only, no submit)
     file:
       path: ctf_ad/captured_flags.txt
     http:
@@ -35,6 +40,16 @@ attack:
       headers:
         Authorization: "Bearer CHANGEME"
       timeout_seconds: 5
+    tcp:                      # ctf-gameserver's plaintext protocol (FAUST CTF and similar)
+      host: submission.example
+      port: 666
+      timeout_seconds: 10
+  # Only needed for ctf-gameserver-based events that require looking up a
+  # flag by ID rather than scanning traffic for one. Omit/null to disable —
+  # exploits then just get flag_ids=[] and behave like a plain scan.
+  flag_ids:
+    url: null                 # e.g. "https://2026.faustctf.net/competition/teams.json"
+    refresh_seconds: 60
   state:
     seen_flags_path: ctf_ad/seen_flags.json
   logging:

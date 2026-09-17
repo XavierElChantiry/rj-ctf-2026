@@ -18,6 +18,30 @@ what actually held up.
   exercises, but still mostly offensive."
 - 5-person team.
 
+## Dry run: FAUST CTF 2026 (Sat 2026-09-26, next week relative to this repo's work)
+
+- A real, live, unrelated attack-defend CTF ([2026.faustctf.net](https://2026.faustctf.net/),
+  12:00-21:00 UTC) the team is using as a rehearsal — genuine A/D with VPN +
+  self-hosted vulnbox + flags that rotate, unlike RJ's own confirmed
+  jeopardy-plus-one-defense-round format above. This is what actually
+  promoted `ctf_ad/` from "unlikely contingency" to "this week's real tool."
+- **Registration**: open as of research time, no stated deadline found —
+  confirm the user's team has actually registered; that step is theirs to
+  do, not something done in this repo.
+- FAUST runs on [ctf-gameserver](https://ctf-gameserver.org/), which works
+  differently from a generic scoreboard: flags are looked up by **flag ID**
+  per (service, team, round) via a public `teams.json`, targets are
+  **team-number-derived IPv6 addresses** (`fd66:666:<team>::2`), and
+  submission is a **raw TCP line protocol** on port 666 (not HTTP) — see
+  `ctf_ad/README.md`'s "ctf-gameserver-based events" section for the full
+  mechanics and `ctf_ad/config.faustctf.example.yaml` for a pre-filled
+  config (still needs `own_team_number`/`team_numbers` once assigned).
+- The `tcp` submission backend was written from the protocol spec and
+  passed a unit test against a local mock server, but has **never touched
+  the real submission host** — that's only reachable from inside the
+  competition VPN, which won't exist until game day. Budget time on
+  2026-09-26 to sanity-check it for real before relying on it.
+
 ## Format — confirmed vs. assumed (important, read this)
 
 1. **First assumption (wrong-ish): classic attack-defend.** Initial ask was

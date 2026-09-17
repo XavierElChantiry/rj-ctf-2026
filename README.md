@@ -14,7 +14,7 @@ Three independent toolkits, one per folder:
 |---|---|---|
 | [`ctf_toolkit/`](ctf_toolkit/README.md) | Jeopardy challenges | Primary — you'll use this most |
 | [`ctf_defense/`](ctf_defense/README.md) | Live host-defense round | Primary — confirmed round |
-| [`ctf_ad/`](ctf_ad/README.md) | Classic attack-defend (rotating flags vs. live opponents) | Contingency only — this format is **not believed** to be part of the event; kept in case a live-infra segment turns up |
+| [`ctf_ad/`](ctf_ad/README.md) | Classic attack-defend (rotating flags vs. live opponents) | Contingency for the RJ event itself (this format is **not believed** to be part of it) — but actively used for **FAUST CTF 2026** (Sat 2026-09-26), a real live A/D event the team is using as a rehearsal |
 
 ## Team roles (5 people)
 
@@ -108,21 +108,30 @@ allow-listed ports, scoring subnet, capture ports/dir, jail root) — every
 script sources it. Full run order, troubleshooting, and recommended
 external tools: [`ctf_defense/README.md`](ctf_defense/README.md).
 
-### `ctf_ad/` — attack-defend exploit-runner scaffold (contingency only)
+### `ctf_ad/` — attack-defend exploit-runner scaffold
 
-Built before the format got clarified — assumes continuous rounds against
-live opponent infrastructure with rotating flags, which is now believed
-**not** to be this event's format. Don't lead with this unless something
-concrete points back to it.
+Built before the RJ event's format got clarified — assumes continuous
+rounds against live opponent infrastructure with rotating flags, which is
+now believed **not** to be RJ's format. Don't lead with this for RJ unless
+something concrete points back to it — but it's the primary toolkit for
+next week's **FAUST CTF 2026** rehearsal, which genuinely is this format.
 
 - **`attack/runner.py`** — pluggable exploit-module runner; auto-discovers
   modules dropped in `attack/exploits/`, fans out across targets each
   round, dedupes flags, logs per-round summaries.
 - **`attack/exploits/_template.py`** — copy this to start a new exploit
   module; implement `run()` to return candidate strings, the runner does
-  the flag-matching.
+  the flag-matching. Accepts an optional `flag_ids` list for
+  ctf-gameserver-based events (see below).
 - **`attack/submitters.py`** — pluggable flag-submission backends
-  (`file` / `http` / `null`).
+  (`file` / `http` / `tcp` / `null`). `tcp` speaks ctf-gameserver's
+  plaintext line protocol (FAUST CTF and similar).
+- **`attack/flagids.py`** — polls a `teams.json`-style endpoint and caches
+  flag IDs by (service, team), for events where a flag has to be looked up
+  by ID rather than scanned off the wire.
+- **`common/targets.py`** — expands a target list either from a flat IP
+  list, or from `team_numbers` + an address template (e.g. FAUST's IPv6
+  `fd66:666:<team>::2` scheme).
 - **`defense/healthcheck.py`** — hits your own services after every patch
   to confirm the SLA checker still passes.
 - **`defense/log_watch.py`** — tails configured logs, flags common exploit
@@ -131,7 +140,10 @@ concrete points back to it.
   flag-shaped strings on the wire (detection only, never blocks). Needs
   scapy + root/Npcap.
 
-Setup and full workflow: [`ctf_ad/README.md`](ctf_ad/README.md).
+Setup and full workflow, including the ctf-gameserver/FAUST-specific mode:
+[`ctf_ad/README.md`](ctf_ad/README.md). Two starting configs:
+`config.example.yaml` (generic flat-IP A/D) and
+`config.faustctf.example.yaml` (pre-filled for FAUST CTF 2026).
 
 ## Borrowed ideas
 
