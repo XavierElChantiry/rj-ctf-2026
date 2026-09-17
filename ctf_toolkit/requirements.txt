@@ -1,0 +1,3 @@
+# requests and pyyaml are already in the main project's requirements.txt.
+# scapy is only needed for blue/pcap_triage.py.
+scapy>=2.5

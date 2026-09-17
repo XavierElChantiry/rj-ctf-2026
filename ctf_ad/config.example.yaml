@@ -1,0 +1,62 @@
+# Copy to config.yaml and fill in once the game starts.
+# config.yaml is gitignored — never commit real team IPs / API tokens.
+
+flag_regex: 'FLAG\{[A-Za-z0-9_\-]{5,100}\}'
+
+# Your own team's IP(s), so the attack runner never fires exploits at yourself.
+own_ips:
+  - 10.60.0.2
+
+# Enemy team hosts to attack. Fill in as soon as the scoreboard publishes them.
+# Either explicit IPs, or a Python range expression evaluated by expand_targets().
+teams:
+  - 10.60.1.2
+  - 10.60.2.2
+  - 10.60.3.2
+
+attack:
+  timeout_seconds: 5
+  concurrency: 20
+  round_interval_seconds: 90   # match the game's flag-rotation tick once announced
+  submission:
+    backend: file             # file | http | null (null = print only, no submit)
+    file:
+      path: ctf_ad/captured_flags.txt
+    http:
+      url: "https://scoreboard.example/api/flags"
+      method: POST
+      flag_field: flag
+      headers:
+        Authorization: "Bearer CHANGEME"
+      timeout_seconds: 5
+  state:
+    seen_flags_path: ctf_ad/seen_flags.json
+  logging:
+    path: ctf_ad/attack.log
+    level: INFO
+
+defense:
+  sniff:
+    interface: null            # null = scapy default interface
+    ports: [80, 22, 21, 25, 3306, 5432, 8080]
+  healthcheck:
+    interval_seconds: 30
+    checks:
+      - name: web
+        type: http
+        url: "http://127.0.0.1:80/"
+        expect_status: 200
+      - name: ssh
+        type: tcp
+        host: 127.0.0.1
+        port: 22
+  log_watch:
+    paths:
+      - /var/log/nginx/access.log
+    extra_patterns:
+      - '\.\./\.\./'          # path traversal
+      - 'UNION\s+SELECT'      # sqli
+      - '<script'             # xss
+  logging:
+    path: ctf_ad/defense.log
+    level: INFO

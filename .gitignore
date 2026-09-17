@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+
+# ctf_ad: real team IPs / tokens / captured flags never get committed
+ctf_ad/config.yaml
+ctf_ad/*.log
+ctf_ad/seen_flags.json
+ctf_ad/captured_flags.txt
+
+# ctf_defense: runtime state/logs/backups from actually running the scripts
+ctf_defense/**/backups/
+ctf_defense/**/*.log
+ctf_defense/**/*.pcap*
